@@ -4,8 +4,6 @@ class game_obj(object):
 
     def __init__(self, x, y, pic_path):
         """
-        The constructor for all game objects
-
         :param int x: inital x position of object
         :param int y: inital y position of object
         :param str pic_path: relative path of object picture
@@ -21,11 +19,11 @@ class game_obj(object):
         """
         pass
 
+
 class player(game_obj):
+
     def __init__(self, x, y, pic_path, acc, vel_x, vel_y, dir):
         """
-        The constructor for player class, subclass of game objects
-
         :param int x: inital x position of player
         :param int y: inital y position of player
         :param str pic_path: relative path of object picture
@@ -55,7 +53,7 @@ class player(game_obj):
             's' -> down
         """
 
-        if dir == null:
+        if dir == None:
             # no input given, continue in previous direction
             self.x += vel_x
             self.y += vel_y
@@ -97,13 +95,12 @@ class player(game_obj):
         :rtype: boolean
         """
         pass
-    
+
 
 class enemy(game_obj):
+
     def __init__(self, x, y, pic_path, acc, vel_x, vel_y, dir):
         """
-        The constructor for enemy class, subclass of game objects
-
         :param int x: inital x position of enemy
         :param int y: inital y position of enemy
         :param str pic_path: relative path of object picture
@@ -172,33 +169,33 @@ class enemy(game_obj):
         """
         pass
 
+
 class tower(game_obj):
+
     def __init__(self, x, y, pic_path):
         """
-        The constructor for tower class, subclass of game objects
-
         :param int x: inital x position of tower
         :param int y: inital y position of tower
         :param str pic_path: relative path of object picture
         """
         super().__init__(x, y, pic_path)
 
+
 class picture(game_obj):
+
     def __init__(self, x, y, pic_path):
         """
-        The constructor for picture class, subclass of game objects
-
         :param int x: inital x position of picture
         :param int y: inital y position of picture
         :param str pic_path: relative path of object picture
         """
         super().__init__(x, y, pic_path)
 
-class text(game_obj):
-    def __init__(self, x, y, font_path):
-        """
-        The constructor for text class, subclass of game objects
 
+class text(game_obj):
+
+    def __init__(self, x, y, info):
+        """
         :param int x: inital x position of picture
         :param int y: inital y position of picture
         :param str pic_path: relative path of object picture
