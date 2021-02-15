@@ -1,22 +1,18 @@
-from game_manager import game_manager
 import pygame as pg
+import data_storage as ds
 from sys import exit
+import page
 
-print("The start of main function.")
+pg.init()
 
-class game(object):
+pg.display.set_caption("Atipycal Invasion")
 
-    def __init__(self):
-        """
-        """
-        pass
+title_icon = pg.image.load("Player.png")
+pg.display.set_icon(title_icon)
 
-    def game_run(self):
-        """
-        """
-        pass
+while True:
+    page.start_page()
 
-if __name__ == "__main__":
-    print("main function here.")
+    while ds.game_page:
+        page.game_page()
 
-print("The end of main function.")
