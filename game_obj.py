@@ -3,34 +3,36 @@ import pygame as pg
 import data_storage as ds
 from math import sqrt, pow, atan
 
+
 class game_obj(object):
 
     def __init__(self, x, y, pic_path):
         """
-        :param int x: inital x position of object
-        :param int y: inital y position of object
+        :param int x: initial x coor of object
+        :param int y: initial y coor of object
         :param str pic_path: relative path of object picture
         """
 
         self.x = x
         self.y = y
         self.pic_path = pic_path
+        self.img = pg.image.load(pic_path)
 
     def refresh(self):
         """
-        Needs to be overridden by subclasses
+        Needs to be overridden by subclasses if necessary
         """
-        pass
+        ds.screen.blit(self.img, [self.x, self.y])
 
 
 class player(game_obj):
 
     def __init__(self, x, y, pic_path, acc, x_spd, y_spd):
         """
-        :param int x: inital x position of player
-        :param int y: inital y position of player
+        :param int x: initial x coor of player
+        :param int y: initial y coor of player
         :param str pic_path: relative path of object picture
-        :param int acc: the determined acceleration for player object
+        :param float acc: the player's acceleration
         :param int x_spd: the speed of player in horizontal direction
         :param int y_spd: the speed of player in vertical direction
         """
@@ -46,6 +48,8 @@ class player(game_obj):
         self.S = False
         self.D = False
         self.is_alive = True
+        # The center coor of player
+        self.ctpos = [self.x + ds.player_wid/2, self.y + ds.player_hgt/2]
 
     def key_response(self):
         """
@@ -114,11 +118,24 @@ class player(game_obj):
         Adjust player's image when its direction changes.
         """
         self.new_img = self.img
-        #pg.draw.line(screen, [0, 255, 0], self.ctpos, [self.ctpos[0], self.ctpos[1]-self.y_spd*20], laser_width)
-        #pg.draw.line(screen, [255, 0, 0], self.ctpos, [self.ctpos[0]+self.x_spd*20, (self.ctpos[1])], laser_width)
+
+        #pg.draw.line(ds.screen,
+        #             [0, 255, 0],
+        #             self.ctpos,
+        #             [self.ctpos[0],
+        #             self.ctpos[1]-self.y_spd*20],
+        #             laser_width)
+        #pg.draw.line(ds.screen,
+        #             [255, 0, 0],
+        #             self.ctpos,
+        #             [self.ctpos[0]+self.x_spd*20, (self.ctpos[1])],
+        #             laser_width)
+
         if not self.y_spd == 0:
+
             tan = self.x_spd / self.y_spd
             angle = atan(tan) * 180 / ds.pi
+
             if self.y_spd > 0:
                 self.new_img = pg.transform.rotate(self.img, angle + 180)
             else:
@@ -134,7 +151,7 @@ class player(game_obj):
 
     def refresh(self):
         """
-        Determine the attributes of player on the next frame.
+        Adjust player's attributes of the next frame.
         """
 
         self.key_response()
@@ -148,8 +165,8 @@ class enemy(game_obj):
 
     def __init__(self, x, y, pic_path, acc, vel_x, vel_y, dir):
         """
-        :param int x: inital x position of enemy
-        :param int y: inital y position of enemy
+        :param int x: initial x coor of enemy
+        :param int y: initial y coor of enemy
         :param str pic_path: relative path of object picture
         :param int acc: the determined acceleration for enemy object (no direction involved)
         :param int vel_x: the speed of enemy in vertical direction
@@ -228,8 +245,8 @@ class tower(game_obj):
 
     def __init__(self, x, y, pic_path):
         """
-        :param int x: inital x position of tower
-        :param int y: inital y position of tower
+        :param int x: initial x coor of tower
+        :param int y: initial y coor of tower
         :param str pic_path: relative path of object picture
         """
         super().__init__(x, y, pic_path)
@@ -239,19 +256,38 @@ class picture(game_obj):
 
     def __init__(self, x, y, pic_path):
         """
-        :param int x: inital x position of picture
-        :param int y: inital y position of picture
+        :param int x: initial x coor of picture
+        :param int y: initial y coor of picture
         :param str pic_path: relative path of object picture
         """
         super().__init__(x, y, pic_path)
 
 
-class text(game_obj):
+class text(object):
 
-    def __init__(self, x, y, info):
+    def __init__(self, font = 'consolas', color = None):
         """
-        :param int x: inital x position of picture
-        :param int y: inital y position of picture
-        :param str pic_path: relative path of object picture
+        Initialize the text's style.
+
+        :param str font: The font of text info
+        :param list color: The hex color list of text info
         """
-        super().__init__(x, y, font_path)
+
+        self.style = style
+        self.color = color
+        self.bg_color = ds.black
+    
+    def write_txt(self, pos, size, info):
+        """
+        Display the text content on the screen.
+
+        :param list pos: The list of [x,y] coor of text
+        :param int size: The font size of text
+        :param str info: Specific text content
+        """
+
+        self.pos = pos
+        self.size = size
+        self.ft = pg.font.SysFont(self.style, size)
+        text = self.ft.render(info, True, self.color, self.bg_color)
+        ds.screen.blit(text, self.pos) 
