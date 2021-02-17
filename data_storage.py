@@ -31,10 +31,8 @@ info_page = False
 score_page = False
 settings_page = False
 
-map_hgt = 1200  # The hight of the game map
-map_wid = 1600  # The width of the game map
+map_hgt = 2400  # The hight of the game map
+map_wid = 3200  # The width of the game map
 
 scr_x = 0  #  The screen's x coor on the game map
 scr_y = 0  #  The screen's y coor on the game map
-
-

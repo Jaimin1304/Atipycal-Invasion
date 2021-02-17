@@ -29,6 +29,13 @@ def start_page():
                 print("ds.game_page: " + str(ds.game_page))
             if event.key == pg.K_s:
                 print("Settings page")
+            if event.key == pg.K_a:
+                print("About page")
+            if event.key == pg.K_h:
+                print("Help page")
+            if event.key == pg.K_e:
+                pg.quit()
+                exit()
     screen_refresh()
 
 
@@ -42,7 +49,9 @@ def game_page():
                        0.5,
                        0 ,
                        0)
+    bg_pic = go.picture(0, 0, "100x100.png")
     while True:
+        bg_pic.refresh()
         player.refresh()
         screen_refresh()
 

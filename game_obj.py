@@ -18,11 +18,18 @@ class game_obj(object):
         self.pic_path = pic_path
         self.img = pg.image.load(pic_path)
 
-    def refresh(self):
+    def refresh(self, on_map = True):
         """
         Needs to be overridden by subclasses if necessary
+
+        :param bool on_map: 
+            if true, show pic on the game map, else, show pic on the screen. 
+            A pic is on screen means it and the screen remain relatively still.
         """
-        ds.screen.blit(self.img, [self.x, self.y])
+        if on_map:
+            ds.screen.blit(self.img, [self.x - ds.scr_x, self.y - ds.scr_y])
+        else:
+            ds.screen.blit(self.img, [self.x, self.y])
 
 
 class player(game_obj):
@@ -38,7 +45,6 @@ class player(game_obj):
         """
 
         super().__init__(x, y, pic_path)
-        self.img = pg.image.load(pic_path)
         self.img = pg.transform.smoothscale(self.img, (ds.player_wid, ds.player_hgt))
         self.acc = acc
         self.x_spd = x_spd
@@ -50,6 +56,27 @@ class player(game_obj):
         self.is_alive = True
         # The center coor of player
         self.ctpos = [self.x + ds.player_wid/2, self.y + ds.player_hgt/2]
+
+    def adjust_scr_pos(self):
+        """
+        Adjust the screen's position on map according to position of player.
+        """
+
+        ds.scr_x = (self.x + ds.player_wid/2) - (ds.scr_wid/2)
+        ds.scr_y = (self.y + ds.player_hgt/2) - (ds.scr_hgt/2)
+
+        # If the screen touches the left end of map
+        if ds.scr_x < 0:
+            ds.scr_x = 0
+        # If the screen touches the right end of map
+        if ds.scr_x > ds.map_wid - ds.scr_wid:
+            ds.scr_x = ds.map_wid - ds.scr_wid
+        # If the screen touches the top end of map
+        if ds.scr_y < 0:
+            ds.scr_y = 0
+        # If the screen touches the bottom end of map
+        if ds.scr_y > ds.map_hgt - ds.scr_hgt:
+            ds.scr_y = ds.map_hgt - ds.scr_hgt
 
     def key_response(self):
         """
@@ -73,6 +100,12 @@ class player(game_obj):
                     self.S = True
                 if event.key == pg.K_d:
                     self.D = True
+                if event.key == pg.K_p:
+                    print("----------------------------")
+                    print(self.x, self.y)
+                    print(ds.scr_x, ds.scr_y)
+                    print(self.x - ds.scr_x, self.y - ds.scr_y)
+                    print(self.x_corr_val, self.y_corr_val)
             elif event.type == pg.KEYUP:
                 if event.key == pg.K_w:
                     self.W = False
@@ -119,17 +152,17 @@ class player(game_obj):
         """
         self.new_img = self.img
 
-        #pg.draw.line(ds.screen,
-        #             [0, 255, 0],
-        #             self.ctpos,
-        #             [self.ctpos[0],
-        #             self.ctpos[1]-self.y_spd*20],
-        #             laser_width)
-        #pg.draw.line(ds.screen,
-        #             [255, 0, 0],
-        #             self.ctpos,
-        #             [self.ctpos[0]+self.x_spd*20, (self.ctpos[1])],
-        #             laser_width)
+        pg.draw.line(ds.screen,
+                     [0, 255, 0],
+                     self.ctpos,
+                     [self.ctpos[0],
+                     self.ctpos[1] + self.y_spd*20],
+                     3)
+        pg.draw.line(ds.screen,
+                     [255, 0, 0],
+                     self.ctpos,
+                     [self.ctpos[0] + self.x_spd*20, (self.ctpos[1])],
+                     3)
 
         if not self.y_spd == 0:
 
@@ -149,16 +182,22 @@ class player(game_obj):
         self.x_corr_val = (self.new_img.get_rect().size[0] - ds.player_wid) / 2
         self.y_corr_val = (self.new_img.get_rect().size[1] - ds.player_hgt) / 2
 
-    def refresh(self):
+    def refresh(self, on_map = True):
         """
         Adjust player's attributes of the next frame.
         """
+
+        self.ctpos = [self.x + ds.player_wid/2 - ds.scr_x,
+                      self.y + ds.player_hgt/2 - ds.scr_y]
 
         self.key_response()
         self.collide_detect()
         self.out_detect()
         self.rotate()
-        ds.screen.blit(self.new_img, [self.x - self.x_corr_val, self.y - self.y_corr_val])
+        self.adjust_scr_pos()
+        ds.screen.blit(self.new_img,
+                       [self.x - self.x_corr_val - ds.scr_x, 
+                       self.y - self.y_corr_val - ds.scr_y])
 
 
 class enemy(game_obj):
@@ -276,18 +315,26 @@ class text(object):
         self.style = style
         self.color = color
         self.bg_color = ds.black
-    
-    def write_txt(self, pos, size, info):
+
+    def write_txt(self, pos, size, info, on_map = True):
         """
         Display the text content on the screen.
 
         :param list pos: The list of [x,y] coor of text
         :param int size: The font size of text
         :param str info: Specific text content
+        :param bool on_map: 
+            if true, write text on the game map, else, write text on the screen. 
+            A piece of text is on screen means it and the screen remain relatively 
+            still.
         """
 
         self.pos = pos
         self.size = size
         self.ft = pg.font.SysFont(self.style, size)
         text = self.ft.render(info, True, self.color, self.bg_color)
-        ds.screen.blit(text, self.pos) 
+
+        if on_map:
+            ds.screen.blit(text, [self.pos[0] - ds.scr_x, self.pos[1] - ds.scr_y])
+        else:
+            ds.screen.blit(text, self.pos)
