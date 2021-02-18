@@ -18,7 +18,7 @@ class game_obj(object):
         self.pic_path = pic_path
         self.img = pg.image.load(pic_path)
 
-    def refresh(self, on_map = True):
+    def refresh(self):
         """
         Needs to be overridden by subclasses if necessary
 
@@ -26,10 +26,7 @@ class game_obj(object):
             if true, show pic on the game map, else, show pic on the screen. 
             A pic is on screen means it and the screen remain relatively still.
         """
-        if on_map:
-            ds.screen.blit(self.img, [self.x - ds.scr_x, self.y - ds.scr_y])
-        else:
-            ds.screen.blit(self.img, [self.x, self.y])
+        ds.screen.blit(self.img, [self.x, self.y])
 
     def get_rect(self):
         self.img_rect = self.img.get_rect()
@@ -54,13 +51,16 @@ class player(game_obj):
         self.acc = acc
         self.x_spd = x_spd
         self.y_spd = y_spd
+        self.is_alive = True
+        # The center coor of the player
+        self.ctpos = [self.x + ds.player_wid/2, self.y + ds.player_hgt/2]
+        # The collision radius of the player
+        self.rad = sqrt(pow(ds.player_hgt/2, 2) + pow(ds.player_wid/2, 2))
+        # Whether the corresponding key is pressed
         self.W = False
         self.A = False
         self.S = False
         self.D = False
-        self.is_alive = True
-        # The center coor of player
-        self.ctpos = [self.x + ds.player_wid/2, self.y + ds.player_hgt/2]
 
     def adjust_scr_pos(self):
         """
@@ -139,18 +139,18 @@ class player(game_obj):
         Adjust player's coor if it collides with other objects.
 
         :return: Whether player collided with another game object
-        :rtype: boolean
+        :rtype: bool
         """
         collide = pg.Rect.colliderect(self.get_rect(), oth_game_obj.get_rect())
 
-    def out_detect(self):
+    def wall_detect(self):
         """
         Adjust player's coor if it collides with map boundary.
 
         :return: Whether enemy collided with map boundary
-        :rtype: boolean
+        :rtype: bool
         """
-
+    
         # bounce off the wall if the collide
         if self.x < 0:
             self.x = 0 # to minimise error
@@ -164,6 +164,7 @@ class player(game_obj):
         if self.y > ds.map_hgt - ds.player_hgt:
             self.y = ds.map_hgt - ds.player_hgt
             self.y_spd = -self.y_spd
+
 
     def rotate(self):
         """
@@ -313,28 +314,38 @@ class picture(game_obj):
         :param str pic_path: relative path of object picture
         """
         super().__init__(x, y, pic_path)
+    
+    def refresh(self, on_map = True):
+        """
+        :param bool on_map: 
+            if true, show pic on the game map, else, show pic on the screen. 
+            A pic is on screen means it and the screen remain relatively still.
+        """
+        if on_map:
+            ds.screen.blit(self.img, [self.x - ds.scr_x, self.y - ds.scr_y])
+        else:
+            ds.screen.blit(self.img, [self.x, self.y])
 
 
 class text(object):
 
-    def __init__(self, font = 'consolas', color = None):
+    def __init__(self, font = 'consolas'):
         """
         Initialize the text's style.
 
-        :param str font: The font of text info
-        :param list color: The hex color list of text info
+        :param str font: The font string of text info
         """
 
-        self.style = style
-        self.color = color
+        self.font = font
         self.bg_color = ds.black
 
-    def write_txt(self, pos, size, info, on_map = True):
+    def write_txt(self, pos, size, color, info, on_map = True):
         """
         Display the text content on the screen.
 
         :param list pos: The list of [x,y] coor of text
         :param int size: The font size of text
+        :param list color: The [r, g, b] color list of text info
         :param str info: Specific text content
         :param bool on_map: 
             if true, write text on the game map, else, write text on the screen. 
@@ -344,10 +355,11 @@ class text(object):
 
         self.pos = pos
         self.size = size
-        self.ft = pg.font.SysFont(self.style, size)
-        text = self.ft.render(info, True, self.color, self.bg_color)
+        self.color = color
+        self.ft = pg.font.SysFont(self.font, size)
+        text = self.ft.render(info, True, color)
 
         if on_map:
-            ds.screen.blit(text, [self.pos[0] - ds.scr_x, self.pos[1] - ds.scr_y])
+            ds.screen.blit(text, [pos[0] - ds.scr_x, pos[1] - ds.scr_y])
         else:
-            ds.screen.blit(text, self.pos)
+            ds.screen.blit(text, pos)

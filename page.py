@@ -36,6 +36,7 @@ def start_page():
             if event.key == pg.K_e:
                 pg.quit()
                 exit()
+
     screen_refresh()
 
 
@@ -50,8 +51,12 @@ def game_page():
                        0 ,
                        0)
     bg_pic = go.picture(0, 0, "100x100.png")
+    test_txt = go.text()
     while True:
         bg_pic.refresh()
+        test_txt.write_txt([300, 600], 300, [148, 0, 211], "Hello There")
+        test_txt.write_txt([0, 0], 30, [255, 160, 122], "Test2", False)
+
         player.refresh()
         screen_refresh()
 
@@ -60,13 +65,26 @@ def about_page():
     """
     Display the infomation page and handle its logic.
     """
-    screen_refresh()
+
+    test_txt = go.text()
+    while True:
+
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                exit()
+            if event.type == pg.KEYDOWN and event.key == pg.K_b:
+                ds.start_page = True
+
+        test_txt.write_txt([0, 0], 30, [255, 160, 122], "about page", False)
+        screen_refresh()
 
 
 def score_page():
     """
     Display the score board page and handle its logic.
     """
+
     screen_refresh()
 
 
@@ -74,4 +92,5 @@ def settings_page():
     """
     Display the settings page and handle its logic.
     """
+
     screen_refresh()
