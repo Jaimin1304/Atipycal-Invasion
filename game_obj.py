@@ -31,6 +31,11 @@ class game_obj(object):
         else:
             ds.screen.blit(self.img, [self.x, self.y])
 
+    def get_rect(self):
+        self.img_rect = self.img.get_rect()
+        self.img_rect.topleft = [self.x, self.y]
+        return self.img_rect
+
 
 class player(game_obj):
 
@@ -105,7 +110,8 @@ class player(game_obj):
                     print(self.x, self.y)
                     print(ds.scr_x, ds.scr_y)
                     print(self.x - ds.scr_x, self.y - ds.scr_y)
-                    print(self.x_corr_val, self.y_corr_val)
+                    # print(self.x_corr_val, self.y_corr_val)
+                    print(self.get_rect())
             elif event.type == pg.KEYUP:
                 if event.key == pg.K_w:
                     self.W = False
@@ -128,14 +134,14 @@ class player(game_obj):
         self.x = self.x + self.x_spd
         self.y = self.y + self.y_spd
 
-    def collide_detect(self):
+    def collide_detect(self, oth_game_obj):
         """
         Adjust player's coor if it collides with other objects.
 
         :return: Whether player collided with another game object
         :rtype: boolean
         """
-        pass
+        collide = pg.Rect.colliderect(self.get_rect(), oth_game_obj.get_rect())
 
     def out_detect(self):
         """
@@ -144,7 +150,20 @@ class player(game_obj):
         :return: Whether enemy collided with map boundary
         :rtype: boolean
         """
-        pass
+
+        # bounce off the wall if the collide
+        if self.x < 0:
+            self.x = 0 # to minimise error
+            self.x_spd = -self.x_spd
+        if self.x > ds.map_wid - ds.player_wid:
+            self.x = ds.map_wid - ds.player_wid
+            self.x_spd = -self.x_spd
+        if self.y < 0:
+            self.y = 0
+            self.y_spd = - self.y_spd
+        if self.y > ds.map_hgt - ds.player_hgt:
+            self.y = ds.map_hgt - ds.player_hgt
+            self.y_spd = -self.y_spd
 
     def rotate(self):
         """
@@ -191,7 +210,7 @@ class player(game_obj):
                       self.y + ds.player_hgt/2 - ds.scr_y]
 
         self.key_response()
-        self.collide_detect()
+        # self.collide_detect(self)
         self.out_detect()
         self.rotate()
         self.adjust_scr_pos()
@@ -233,24 +252,18 @@ class enemy(game_obj):
         :return: Whether enemy collided with another game object
         :rtype: boolean
         """
-        pass
+        return pg.Rect.colliderect(self.get_rect(), oth_game_obj.get_rect())
 
-    def detect_out(self, oth_game_obj):
+    def detect_out(self):
         """
-        :return: Whether enemy collided with another game object
+        :return: Whether enemy collided with the map wall
         :rtype: boolean
         """
         pass
 
-    def refresh(self):
+    def refresh(self, on_map = True):
         """
-        Determine the attributes of enemy on the next frame
-
-        :param str dir: a randomly generated direction
-            'a' -> left,
-            'd' -> right,
-            'w' -> up,
-            's' -> down
+        Adjust enemy's attributes of the next frame.
         """
 
         dir = random.choice(['a', 'd', 'w', 's'])
