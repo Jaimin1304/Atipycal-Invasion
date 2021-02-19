@@ -1,2 +1,1 @@
-
-from sys import exit
+a

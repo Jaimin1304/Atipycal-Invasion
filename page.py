@@ -47,7 +47,7 @@ def game_page():
     player = go.player(ds.scr_wid/2 - ds.player_wid/2,
                        ds.scr_hgt/2 - ds.player_hgt/2,
                        "Player.png",
-                       0.5,
+                       0.3,
                        0 ,
                        0)
     bg_pic = go.picture(0, 0, "100x100.png")

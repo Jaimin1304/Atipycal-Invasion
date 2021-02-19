@@ -61,6 +61,8 @@ class player(game_obj):
         self.A = False
         self.S = False
         self.D = False
+        # The player's speed limit
+        self.spd_lim = ds.player_spd_lim
 
     def adjust_scr_pos(self):
         """
@@ -134,6 +136,12 @@ class player(game_obj):
         self.x = self.x + self.x_spd
         self.y = self.y + self.y_spd
 
+        # Ensure that the player does not surpass the speed limit
+        if pow(self.x_spd, 2) + pow(self.y_spd, 2) > pow(self.spd_lim, 2):
+            spd = sqrt(pow(self.x_spd, 2) + pow(self.y_spd, 2))
+            self.x_spd = (self.spd_lim/spd) * self.x_spd
+            self.y_spd = (self.spd_lim/spd) * self.y_spd
+
     def collide_detect(self, oth_game_obj):
         """
         Adjust player's coor if it collides with other objects.
@@ -141,9 +149,10 @@ class player(game_obj):
         :return: Whether player collided with another game object
         :rtype: bool
         """
+
         collide = pg.Rect.colliderect(self.get_rect(), oth_game_obj.get_rect())
 
-    def wall_detect(self):
+    def out_detect(self):
         """
         Adjust player's coor if it collides with map boundary.
 
@@ -160,11 +169,10 @@ class player(game_obj):
             self.x_spd = -self.x_spd
         if self.y < 0:
             self.y = 0
-            self.y_spd = - self.y_spd
+            self.y_spd = -self.y_spd
         if self.y > ds.map_hgt - ds.player_hgt:
             self.y = ds.map_hgt - ds.player_hgt
             self.y_spd = -self.y_spd
-
 
     def rotate(self):
         """
