@@ -46,7 +46,7 @@ def game_page():
     """
     player = go.player(ds.scr_wid/2 - ds.player_wid/2,
                        ds.scr_hgt/2 - ds.player_hgt/2,
-                       "Player.png",
+                       "Icons/Neon_Player.png",
                        0.3,
                        0 ,
                        0)

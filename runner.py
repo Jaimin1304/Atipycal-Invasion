@@ -7,7 +7,7 @@ pg.init()
 
 pg.display.set_caption("Atipycal Invasion")
 
-title_icon = pg.image.load("Player.png")
+title_icon = pg.image.load("Icons/Neon_Player.png")
 pg.display.set_icon(title_icon)
 
 while True:
