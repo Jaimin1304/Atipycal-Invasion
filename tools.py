@@ -1,6 +1,5 @@
 import time
 
-
 def score_reader(file_name):
     # tracking if this row is odd or even
     i = 0
@@ -18,8 +17,6 @@ def score_reader(file_name):
 
         i += 1
     return s_and_d
-    pass
-
 
 def score_writer(score, file_name):
     # tracking if the row is odd or even
@@ -54,7 +51,6 @@ def score_writer(score, file_name):
             records1[i + 1] = a
         i += 1"""
     processed_records = records1[:-1]
-
 
     # open the file,  cover it and write score EXPECT THE LAST ONE
     with open(file_name, "w") as f:

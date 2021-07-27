@@ -1,5 +1,5 @@
 import pygame as pg
-import data_storage as ds
+import config as cf
 from sys import exit
 import page
 
@@ -13,6 +13,5 @@ pg.display.set_icon(title_icon)
 while True:
     page.start_page()
 
-    while ds.game_page:
+    while cf.game_page:
         page.game_page()
-
