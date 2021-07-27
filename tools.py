@@ -37,7 +37,6 @@ def score_writer(score, file_name):
             recorded_time = row
             saved_record = [recorded_score, recorded_time]
             records.append(saved_record)
-
         i += 1
 
     # sort records in DECENDING SEQUENCE
@@ -67,10 +66,3 @@ def score_writer(score, file_name):
         return False
     else:
         return True
-
-# testing
-
-#print(score_reader("score.txt"))
-#score_writer(1000, "score.txt")
-
-

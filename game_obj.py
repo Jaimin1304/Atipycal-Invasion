@@ -53,14 +53,10 @@ class player(game_obj):
         self.ctpos = [self.x + cf.player_wid/2, self.y + cf.player_hgt/2]
         # The collision radius of the player
         self.rad = sqrt(pow(cf.player_hgt/2, 2) + pow(cf.player_wid/2, 2))
-        # Whether the corresponding key is pressed
-        self.W = False
-        self.A = False
-        self.S = False
-        self.D = False
         self.engine_on = False
         # The player's speed limit
         self.spd_lim = cf.player_spd_lim
+        self.txt = text()
 
     def adjust_scr_pos(self):
         """
@@ -75,19 +71,10 @@ class player(game_obj):
         :rtype: None
         """
         for event in pg.event.get():
-
             if event.type == pg.QUIT:
                 pg.quit()
                 exit()
             if event.type == pg.KEYDOWN:
-                if event.key == pg.K_w:
-                    self.W = True
-                if event.key == pg.K_a:
-                    self.A = True
-                if event.key == pg.K_s:
-                    self.S = True
-                if event.key == pg.K_d:
-                    self.D = True
                 if event.key == pg.K_p:
                     print("----------------------------")
                     print(self.x, self.y)
@@ -96,29 +83,14 @@ class player(game_obj):
                     # print(self.x_corr_val, self.y_corr_val)
                     print(self.get_rect())
             elif event.type == pg.KEYUP:
-                if event.key == pg.K_w:
-                    self.W = False
-                if event.key == pg.K_a:
-                    self.A = False
-                if event.key == pg.K_s:
-                    self.S = False
-                if event.key == pg.K_d:
-                    self.D = False
+                print('keyup')
             elif event.type == pg.MOUSEBUTTONUP and event.button == 1:
-                print('buttonup')
+                #print('buttonup')
                 self.engine_on = False
             elif event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
-                print('buttondown')
+                #print('buttondown')
                 self.engine_on = True
 
-        if self.W:
-            self.y_spd = self.y_spd - self.acc
-        if self.A:
-            self.x_spd = self.x_spd - self.acc
-        if self.S:
-            self.y_spd = self.y_spd + self.acc
-        if self.D:
-            self.x_spd = self.x_spd + self.acc
         if self.engine_on:
             mx, my = pg.mouse.get_pos() # [0]->x [1]->y
             ctr_x = cf.scr_wid/2
@@ -214,9 +186,10 @@ class player(game_obj):
         self.out_detect()
         self.rotate()
         self.adjust_scr_pos()
-        cf.screen.blit(self.new_img,
-                       [self.x - self.x_corr_val - cf.scr_x, 
-                       self.y - self.y_corr_val - cf.scr_y])
+        new_x = self.x-self.x_corr_val-cf.scr_x
+        new_y = self.y-self.y_corr_val-cf.scr_y
+        self.txt.write_txt([cf.scr_wid/2-30, cf.scr_hgt/2-50], 20, [255, 255, 255], "player1", False)
+        cf.screen.blit(self.new_img, [new_x, new_y])
 
 
 class enemy(game_obj):
@@ -286,7 +259,7 @@ class enemy(game_obj):
             self.y += vel_y
 
 
-class tower(game_obj):
+class star(game_obj):
 
     def __init__(self, x, y, pic_path):
         """
