@@ -1,3 +1,4 @@
+from math import trunc
 import game_obj as go
 import pygame as pg
 import config as cf
@@ -40,15 +41,28 @@ def game_page():
     player = go.player(cf.scr_wid/2 - cf.player_wid/2,
                        cf.scr_hgt/2 - cf.player_hgt/2,
                        "Icons/Neon_Player.png",
-                       0.4,
+                       0.3,
                        0,
                        0)
-    bg_pic = go.picture(0, 0, "100x100.png")
+    sun = go.star(1200, 1400, "stars/star_red.png", 
+                  2, 160, 600, 5, 200, True, None)
+    wet = go.star(0, 0, "stars/planet_wet.png", 
+                  1, 60, 250, 5, 200, False, sun)
+    moon = go.star(0, 0, "stars/planet_grey.png", 
+                  1, 40, 120, 5, 200, True, wet)
+    bg_pic = go.picture(0, 0, "100x100.png", 3200, 2400)
+    test_pic = go.picture(500, 900, "Death.png", 100, 100)
     txt = go.text()
     while True:
         bg_pic.refresh()
         txt.write_txt([300, 600], 300, [148, 0, 211], "Hello There")
         txt.write_txt([0, 0], 30, [255, 160, 122], "Test2", False)
+        sun.refresh()
+        wet.refresh()
+        moon.refresh()
+        #for coor in cf.trace:
+        #    txt.write_txt(coor, 12, cf.white, "*")
+        test_pic.refresh()
         player.refresh()
         screen_refresh()
 

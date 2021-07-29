@@ -1,30 +1,38 @@
 import random
 import pygame as pg
 import config as cf
-from math import sqrt, pow, atan
+from math import sqrt, pow, atan, sin, cos, radians, pi
 
 
 class game_obj(object):
 
     def __init__(self, x, y, pic_path):
         """
-        :param int x: initial x coor of object
-        :param int y: initial y coor of object
-        :param str pic_path: relative path of object picture
+        int x: initial x coor of object on map
+        int y: initial y coor of object on map
+        str pic_path: relative path of object picture
         """
         self.x = x
         self.y = y
         self.pic_path = pic_path
         self.img = pg.image.load(pic_path)
+        self.txt = text()
 
     def refresh(self):
         """
         Needs to be overridden by subclasses if necessary
-        :param bool on_map: 
-            if true, show pic on the game map, else, show pic on the screen. 
-            A pic is on screen means it and the screen remain relatively still.
         """
-        cf.screen.blit(self.img, [self.x, self.y])
+        cf.screen.blit(self.img, [self.x-cf.scr_x, self.y-cf.scr_y])
+
+    def dist(self, point_a, point_b):
+        """
+        Caculates the shortest distance between two points on the map.
+        list[x, y] point_a: the coor of a
+        list[x, y] point_b: the coor of b
+        """
+        x_dist = point_b[0] - point_a[0]
+        y_dist = point_b[1] - point_a[1]
+        return sqrt(x_dist**2 + y_dist**2)
 
     def get_rect(self):
         self.img_rect = self.img.get_rect()
@@ -36,12 +44,12 @@ class player(game_obj):
 
     def __init__(self, x, y, pic_path, acc, x_spd, y_spd):
         """
-        :param int x: initial x coor of player on the map
-        :param int y: initial y coor of player on the map
-        :param str pic_path: relative path of object picture
-        :param float acc: the player's acceleration
-        :param int x_spd: the speed of player in horizontal direction
-        :param int y_spd: the speed of player in vertical direction
+        int x: initial x coor of player on the map
+        int y: initial y coor of player on the map
+        str pic_path: relative path of object picture
+        float acc: the player's acceleration
+        int x_spd: the speed of player in horizontal direction
+        int y_spd: the speed of player in vertical direction
         """
         super().__init__(x, y, pic_path)
         self.img = pg.transform.smoothscale(self.img, (cf.player_wid, cf.player_hgt))
@@ -56,7 +64,6 @@ class player(game_obj):
         self.engine_on = False
         # The player's speed limit
         self.spd_lim = cf.player_spd_lim
-        self.txt = text()
 
     def adjust_scr_pos(self):
         """
@@ -98,8 +105,10 @@ class player(game_obj):
             dis_x = mx-ctr_x
             dis_y = my-ctr_y
             dis = sqrt(dis_x**2+dis_y**2)
-            acc_x = dis_x*(self.acc/dis)
-            acc_y = dis_y*(self.acc/dis)
+            acc_x, acc_y = 0, 0
+            if dis != 0:
+                acc_x = dis_x*(self.acc/dis)
+                acc_y = dis_y*(self.acc/dis)
             self.x_spd = self.x_spd + acc_x
             self.y_spd = self.y_spd + acc_y
         self.x = self.x + self.x_spd
@@ -124,7 +133,7 @@ class player(game_obj):
         :return: Whether enemy collided with map boundary
         :rtype: bool
         """
-        # bounce off the wall if the collide
+        # bounce off the wall if collide
         if self.x < 0:
             self.x = 0 # to minimise error
             self.x_spd = -self.x_spd
@@ -188,21 +197,22 @@ class player(game_obj):
         self.adjust_scr_pos()
         new_x = self.x-self.x_corr_val-cf.scr_x
         new_y = self.y-self.y_corr_val-cf.scr_y
-        self.txt.write_txt([cf.scr_wid/2-30, cf.scr_hgt/2-50], 20, [255, 255, 255], "player1", False)
         cf.screen.blit(self.new_img, [new_x, new_y])
+        #print(self.x, self.y)
+        self.txt.write_txt([cf.scr_wid/2-30, cf.scr_hgt/2-50], 20, cf.white, "player1", False)
 
 
 class enemy(game_obj):
 
     def __init__(self, x, y, pic_path, acc, vel_x, vel_y, dir):
         """
-        :param int x: initial x coor of enemy
-        :param int y: initial y coor of enemy
-        :param str pic_path: relative path of object picture
-        :param int acc: the determined acceleration for enemy object (no direction involved)
-        :param int vel_x: the speed of enemy in vertical direction
-        :param int vel_y: the speed of enemy in horizontal direction
-        :param str dir: the direction of enemy given as input
+        int x: initial x coor of enemy
+        int y: initial y coor of enemy
+        str pic_path: relative path of object picture
+        int acc: the determined acceleration for enemy object (no direction involved)
+        int vel_x: the speed of enemy in vertical direction
+        int vel_y: the speed of enemy in horizontal direction
+        str dir: the direction of enemy given as input
         """
         self.acc = acc
         self.vel_x = vel_x
@@ -261,28 +271,124 @@ class enemy(game_obj):
 
 class star(game_obj):
 
-    def __init__(self, x, y, pic_path):
+    def __init__(self, x, y, pic_path, 
+                 angle, star_r, orbit_r, mass, g_range, clockwise=True, parent=None):
         """
-        :param int x: initial x coor of tower
-        :param int y: initial y coor of tower
-        :param str pic_path: relative path of object picture
+        int x: x coor of the star center on map
+        int y: y coor of the star center on map
+        str pic_path: relative path of object picture
+        int angle: The angle at which the star revolves around the parent star in each frame,
+            must between 0 and 360
+        int star_r: the radius of the star
+        int orbit_r: the radius of the orbit
+        int mass: the mass of the star
+        int g_range: the range of gravity
+        bool clockwise: whether the star does clockwise revolution
+        star parent: the current star rotates around its parent star,
+            leaves None if this star doesn't have a parent star
         """
         super().__init__(x, y, pic_path)
+        self.img = pg.transform.smoothscale(self.img, (star_r*2, star_r*2))
+        self.ctpos = self.get_rect().center
+        self.angle = angle
+        self.star_r = star_r
+        self.orbit_r = orbit_r
+        self.mass = mass
+        self.g_range = g_range
+        self.clockwise = clockwise
+        self.parent = parent
+        if self.parent != None:
+            # Attach the star's starting coor to the orbit
+            x_dist = parent.x - self.x
+            y_dist = parent.y - self.y
+            dist = sqrt(x_dist**2 + y_dist**2)
+            if dist == 0:
+                self.x = parent.x + self.orbit_r
+                self.y = parent.y
+            else:
+                self.x = parent.x - x_dist*(self.parent.orbit_r/dist)
+                self.y = parent.y - y_dist*(self.parent.orbit_r/dist)
+
+    def g_pull(self):
+        """
+        Generate gravitational force on all ships within the g_range.
+        """
+        pass
+
+    def revolve(self):
+        """
+        Calculate the star's coor of the next frame
+        """
+        # calculate new coor
+        if self.y == self.parent.y:
+            print('what a rare surprise')
+            self.y += 1
+        ab_dist = self.orbit_r*sin(radians(self.angle/2))*2
+        ao_xdist = self.x - self.parent.x
+        ao_ydist = self.y - self.parent.y
+        oac_tan = ao_xdist/ao_ydist
+        oac_angle = atan(oac_tan)*180 / cf.pi
+        oab_angle = 90 - self.angle/2
+        dab_angle = 90 - oac_angle - oab_angle
+        ab_xdist = ab_dist*cos(radians(dab_angle))
+        ab_ydist = ab_dist*sin(radians(dab_angle))
+        if self.clockwise:
+            if self.y > self.parent.y:
+                self.x -= ab_xdist
+                self.y -= ab_ydist
+            else:
+                self.x += ab_xdist
+                self.y += ab_ydist
+        else:
+            if self.y > self.parent.y:
+                self.x += ab_xdist
+                self.y += ab_ydist
+            else:
+                self.x -= ab_xdist
+                self.y -= ab_ydist
+        # Orbit correction
+        x_dist = self.parent.x - self.x
+        y_dist = self.parent.y - self.y
+        dist = sqrt(x_dist**2 + y_dist**2)
+        if dist == 0:
+            self.x = self.parent.x + self.orbit_r
+            self.y = self.parent.y
+        self.x = self.parent.x - x_dist*(self.parent.orbit_r/dist)
+        self.y = self.parent.y - y_dist*(self.parent.orbit_r/dist)
+
+    def show_orbit(self, coor):
+        """
+        Draw a circle to show the orbit
+        """
+        pg.draw.circle(cf.screen, cf.white, coor, self.orbit_r, 1)
+
+    def refresh(self):
+        if self.parent != None:
+            #print(self.x, self.y)
+            self.revolve()
+        self.g_pull()
+        coor = [int(self.x-cf.scr_x), int(self.y-cf.scr_y)]
+        self.show_orbit(coor)
+        #cf.trace.append([self.x, self.y])
+        cf.screen.blit(self.img, [coor[0]-self.star_r, coor[1]-self.star_r])
 
 
 class picture(game_obj):
 
-    def __init__(self, x, y, pic_path):
+    def __init__(self, x, y, pic_path, wid, hgt):
         """
-        :param int x: initial x coor of picture
-        :param int y: initial y coor of picture
-        :param str pic_path: relative path of object picture
+        int x: initial x coor of picture
+        int y: initial y coor of picture
+        str pic_path: relative path of object picture
+        int wid: the width of the picture
+        int hgt: the hight of the picture
         """
         super().__init__(x, y, pic_path)
+        self.img = pg.transform.smoothscale(self.img, (wid, hgt))
 
     def refresh(self, on_map = True):
         """
-        :param bool on_map: 
+        bool on_map: 
             if true, show pic on the game map, else, show pic on the screen. 
             A pic is on screen means it and the screen remain relatively still.
         """
@@ -297,7 +403,7 @@ class text(object):
     def __init__(self, font = 'consolas'):
         """
         Initialize the text's style.
-        :param str font: The font string of text info
+        str font: The font string of text info
         """
         self.font = font
         self.bg_color = cf.black
@@ -305,14 +411,11 @@ class text(object):
     def write_txt(self, pos, size, color, info, on_map = True):
         """
         Display the text content on the screen.
-        :param list pos: The list of [x,y] coor of text
-        :param int size: The font size of text
-        :param list color: The [r, g, b] color list of text info
-        :param str info: Specific text content
-        :param bool on_map: 
-            if true, write text on the game map, else, write text on the screen. 
-            A piece of text is on screen means it and the screen remain relatively 
-            still.
+        list pos: The list of [x,y] coor of text
+        int size: The font size of text
+        list color: The [r, g, b] color list of text info
+        str info: Specific text content
+        bool on_map: if true, write on the game map, else write on the screen. 
         """
         self.pos = pos
         self.size = size
