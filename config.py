@@ -11,9 +11,11 @@ fps = 60
 
 black = (0, 0, 0)
 white = (255, 255, 255)
+red = (255, 0, 0)
 
 page_lst = []
 
+player = 'player object'
 player_hgt = 30
 player_wid = 30
 player_spd_lim = 18  # The player's speed limit
@@ -25,9 +27,8 @@ enemy_hgt = 30
 enemy_wid = 30
 
 pi = 3.1416 # The approx val of pi
-G = 6.67 # The gravitational constant
+const_G = 16.67 # The gravitational constant
 
-player_lst = []
 enemy_lst = []
 star_lst = []
 
@@ -42,5 +43,3 @@ game_page = False
 info_page = False
 score_page = False
 settings_page = False
-
-#trace = []

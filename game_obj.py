@@ -64,6 +64,7 @@ class player(game_obj):
         self.engine_on = False
         # The player's speed limit
         self.spd_lim = cf.player_spd_lim
+        cf.player = self
 
     def adjust_scr_pos(self):
         """
@@ -89,6 +90,10 @@ class player(game_obj):
                     print(self.x - cf.scr_x, self.y - cf.scr_y)
                     # print(self.x_corr_val, self.y_corr_val)
                     print(self.get_rect())
+                if event.key == pg.K_t:
+                    print(cf.player_lst)
+                    print(cf.star_lst)
+                    print(cf.enemy_lst)
             elif event.type == pg.KEYUP:
                 print('keyup')
             elif event.type == pg.MOUSEBUTTONUP and event.button == 1:
@@ -99,7 +104,7 @@ class player(game_obj):
                 self.engine_on = True
 
         if self.engine_on:
-            mx, my = pg.mouse.get_pos() # [0]->x [1]->y
+            mx, my = pg.mouse.get_pos()
             ctr_x = cf.scr_wid/2
             ctr_y = cf.scr_hgt/2
             dis_x = mx-ctr_x
@@ -109,8 +114,8 @@ class player(game_obj):
             if dis != 0:
                 acc_x = dis_x*(self.acc/dis)
                 acc_y = dis_y*(self.acc/dis)
-            self.x_spd = self.x_spd + acc_x
-            self.y_spd = self.y_spd + acc_y
+            self.x_spd += acc_x
+            self.y_spd += acc_y
         self.x = self.x + self.x_spd
         self.y = self.y + self.y_spd
         # Ensure that the player does not surpass the speed limit
@@ -119,13 +124,19 @@ class player(game_obj):
             self.x_spd = (self.spd_lim/spd) * self.x_spd
             self.y_spd = (self.spd_lim/spd) * self.y_spd
 
-    def collide_detect(self, oth_game_obj):
+    def collide_detect(self):
         """
         Adjust player's coor if it collides with other objects.
         :return: Whether player collided with another game object
         :rtype: bool
         """
-        collide = pg.Rect.colliderect(self.get_rect(), oth_game_obj.get_rect())
+        for s in cf.star_lst:
+            dist = self.dist([self.x, self.y], [s.x, s.y])
+            if dist < s.star_r*0.9:
+                self.x_spd = 0
+                self.y_spd = 0
+                self.x = 0
+                self.y = 0
 
     def out_detect(self):
         """
@@ -136,16 +147,16 @@ class player(game_obj):
         # bounce off the wall if collide
         if self.x < 0:
             self.x = 0 # to minimise error
-            self.x_spd = -self.x_spd
+            self.x_spd = -self.x_spd*0.5
         if self.x > cf.map_wid - cf.player_wid:
             self.x = cf.map_wid - cf.player_wid
-            self.x_spd = -self.x_spd
+            self.x_spd = -self.x_spd*0.5
         if self.y < 0:
             self.y = 0
-            self.y_spd = -self.y_spd
+            self.y_spd = -self.y_spd*0.5
         if self.y > cf.map_hgt - cf.player_hgt:
             self.y = cf.map_hgt - cf.player_hgt
-            self.y_spd = -self.y_spd
+            self.y_spd = -self.y_spd*0.5
 
     def rotate(self):
         """
@@ -193,6 +204,7 @@ class player(game_obj):
         self.event_esponse()
         # self.collide_detect(self)
         self.out_detect()
+        self.collide_detect()
         self.rotate()
         self.adjust_scr_pos()
         cf.x_player = int(self.x)
@@ -273,15 +285,15 @@ class enemy(game_obj):
 
 class star(game_obj):
 
-    def __init__(self, x, y, pic_path, 
-                 rev_time, star_r, orbit_r, mass, g_range, par, angle, clockwise=True):
+    def __init__(self, x, y, pic_path, rev_time, star_r, orbit_r,
+                 mass, g_range, par, angle, clockwise=True):
         """
         str pic_path: relative path of object picture
         int rev_time: the number of frames it takes to finish one revolution
         int star_r: the radius of the star
         int orbit_r: the radius of the orbit
         int mass: the mass of the star
-        int g_range: the range of gravity
+        int g_range: the gravity range
         star par: the parent of the current star
         int angle: The angle of the star
         list[x, y] st_coor: the coor of the star without a parent
@@ -298,7 +310,7 @@ class star(game_obj):
         self.par = par
         self.rev_time = rev_time
         self.clockwise = clockwise
-        # Attach the star's starting coor to the orbit
+        cf.star_lst.append(self)
         if self.par != None:
             self.central_angle = 360/self.rev_time
             self.angle = int(self.angle/self.central_angle)
@@ -307,7 +319,20 @@ class star(game_obj):
         """
         Generate gravitational force on all ships within the g_range.
         """
-        pass
+        p = cf.player
+        # check whether the player is in the gravity range
+        x_ct = p.x + cf.player_wid/2
+        y_ct = p.y + cf.player_hgt/2
+        r = self.dist([x_ct, y_ct], [self.x, self.y])
+        if r > self.g_range:
+            return
+        grav_a = (cf.const_G*self.mass)/(r*r) # Gravitational acceleration
+        x_delta = self.x - x_ct
+        y_delta = self.y - y_ct
+        ax = x_delta*(grav_a/r)
+        ay = y_delta*(grav_a/r)
+        p.x_spd += ax
+        p.y_spd += ay
 
     def revolve(self):
         """
@@ -331,13 +356,20 @@ class star(game_obj):
         """
         if self.par != None:
             coor = [int(self.par.x-cf.scr_x), int(self.par.y-cf.scr_y)]
-            pg.draw.circle(cf.screen, cf.white, coor, self.orbit_r, 1)
+            pg.draw.circle(cf.screen, cf.white, coor, self.orbit_r, 2)
+
+    def show_g_range(self, coor):
+        """
+        Draw a circle to show the g_range
+        """
+        pg.draw.circle(cf.screen, cf.red, coor, self.g_range, 1)
 
     def refresh(self):
         self.revolve()
         self.g_pull()
         coor = [int(self.x-cf.scr_x), int(self.y-cf.scr_y)]
         self.show_orbit()
+        self.show_g_range(coor)
         #cf.trace.append([self.x, self.y])
         cf.screen.blit(self.img, [coor[0]-self.star_r, coor[1]-self.star_r])
 
