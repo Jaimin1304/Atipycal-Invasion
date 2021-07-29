@@ -195,6 +195,8 @@ class player(game_obj):
         self.out_detect()
         self.rotate()
         self.adjust_scr_pos()
+        cf.x_player = int(self.x)
+        cf.y_player = int(self.y)
         new_x = self.x-self.x_corr_val-cf.scr_x
         new_y = self.y-self.y_corr_val-cf.scr_y
         cf.screen.blit(self.new_img, [new_x, new_y])
@@ -272,42 +274,34 @@ class enemy(game_obj):
 class star(game_obj):
 
     def __init__(self, x, y, pic_path, 
-                 angle, star_r, orbit_r, mass, g_range, clockwise=True, parent=None):
+                 rev_time, star_r, orbit_r, mass, g_range, par, angle, clockwise=True):
         """
-        int x: x coor of the star center on map
-        int y: y coor of the star center on map
         str pic_path: relative path of object picture
-        int angle: The angle at which the star revolves around the parent star in each frame,
-            must between 0 and 360
+        int rev_time: the number of frames it takes to finish one revolution
         int star_r: the radius of the star
         int orbit_r: the radius of the orbit
         int mass: the mass of the star
         int g_range: the range of gravity
+        star par: the parent of the current star
+        int angle: The angle of the star
+        list[x, y] st_coor: the coor of the star without a parent
         bool clockwise: whether the star does clockwise revolution
-        star parent: the current star rotates around its parent star,
-            leaves None if this star doesn't have a parent star
         """
         super().__init__(x, y, pic_path)
+        self.txt = text()
         self.img = pg.transform.smoothscale(self.img, (star_r*2, star_r*2))
-        self.ctpos = self.get_rect().center
-        self.angle = angle
+        self.angle = angle%360
         self.star_r = star_r
         self.orbit_r = orbit_r
         self.mass = mass
         self.g_range = g_range
+        self.par = par
+        self.rev_time = rev_time
         self.clockwise = clockwise
-        self.parent = parent
-        if self.parent != None:
-            # Attach the star's starting coor to the orbit
-            x_dist = parent.x - self.x
-            y_dist = parent.y - self.y
-            dist = sqrt(x_dist**2 + y_dist**2)
-            if dist == 0:
-                self.x = parent.x + self.orbit_r
-                self.y = parent.y
-            else:
-                self.x = parent.x - x_dist*(self.parent.orbit_r/dist)
-                self.y = parent.y - y_dist*(self.parent.orbit_r/dist)
+        # Attach the star's starting coor to the orbit
+        if self.par != None:
+            self.central_angle = 360/self.rev_time
+            self.angle = int(self.angle/self.central_angle)
 
     def g_pull(self):
         """
@@ -317,58 +311,33 @@ class star(game_obj):
 
     def revolve(self):
         """
-        Calculate the star's coor of the next frame
+        Calculate the star's coor
         """
-        # calculate new coor
-        if self.y == self.parent.y:
-            print('what a rare surprise')
-            self.y += 1
-        ab_dist = self.orbit_r*sin(radians(self.angle/2))*2
-        ao_xdist = self.x - self.parent.x
-        ao_ydist = self.y - self.parent.y
-        oac_tan = ao_xdist/ao_ydist
-        oac_angle = atan(oac_tan)*180 / cf.pi
-        oab_angle = 90 - self.angle/2
-        dab_angle = 90 - oac_angle - oab_angle
-        ab_xdist = ab_dist*cos(radians(dab_angle))
-        ab_ydist = ab_dist*sin(radians(dab_angle))
+        if self.par == None:
+            return
+        x_dist = self.orbit_r * cos(radians(self.angle))
+        y_dist = self.orbit_r * sin(radians(self.angle))
+        self.x = self.par.x + x_dist
+        self.y = self.par.y + y_dist
+        # update the angle
         if self.clockwise:
-            if self.y > self.parent.y:
-                self.x -= ab_xdist
-                self.y -= ab_ydist
-            else:
-                self.x += ab_xdist
-                self.y += ab_ydist
+            self.angle = (self.angle+self.central_angle) % 360
         else:
-            if self.y > self.parent.y:
-                self.x += ab_xdist
-                self.y += ab_ydist
-            else:
-                self.x -= ab_xdist
-                self.y -= ab_ydist
-        # Orbit correction
-        x_dist = self.parent.x - self.x
-        y_dist = self.parent.y - self.y
-        dist = sqrt(x_dist**2 + y_dist**2)
-        if dist == 0:
-            self.x = self.parent.x + self.orbit_r
-            self.y = self.parent.y
-        self.x = self.parent.x - x_dist*(self.parent.orbit_r/dist)
-        self.y = self.parent.y - y_dist*(self.parent.orbit_r/dist)
+            self.angle = (self.angle-self.central_angle) % 360
 
-    def show_orbit(self, coor):
+    def show_orbit(self):
         """
         Draw a circle to show the orbit
         """
-        pg.draw.circle(cf.screen, cf.white, coor, self.orbit_r, 1)
+        if self.par != None:
+            coor = [int(self.par.x-cf.scr_x), int(self.par.y-cf.scr_y)]
+            pg.draw.circle(cf.screen, cf.white, coor, self.orbit_r, 1)
 
     def refresh(self):
-        if self.parent != None:
-            #print(self.x, self.y)
-            self.revolve()
+        self.revolve()
         self.g_pull()
         coor = [int(self.x-cf.scr_x), int(self.y-cf.scr_y)]
-        self.show_orbit(coor)
+        self.show_orbit()
         #cf.trace.append([self.x, self.y])
         cf.screen.blit(self.img, [coor[0]-self.star_r, coor[1]-self.star_r])
 

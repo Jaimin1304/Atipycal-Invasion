@@ -17,15 +17,18 @@ page_lst = []
 player_hgt = 30
 player_wid = 30
 player_spd_lim = 18  # The player's speed limit
-player_lst = []
+
+x_player = 0
+y_player = 0
 
 enemy_hgt = 30
 enemy_wid = 30
-enemy_lst = []
 
 pi = 3.1416 # The approx val of pi
 G = 6.67 # The gravitational constant
 
+player_lst = []
+enemy_lst = []
 star_lst = []
 
 map_hgt = 2400  # The hight of the game map
